@@ -3,19 +3,19 @@ namespace Milehigh.Core
     [UnityEngine.DefaultExecutionOrder(-100)]
     public class CampaignManager : UnityEngine.MonoBehaviour
     {
-        private static CampaignManager? _instance;
-        public static CampaignManager Instance
+        private static Milehigh.Core.CampaignManager? _instance;
+        public static Milehigh.Core.CampaignManager Instance
         {
             get
             {
                 // BOLT: O(1) access in the common case after initialization
                 if (_instance != null) return _instance;
 
-                _instance = UnityEngine.Object.FindObjectOfType<CampaignManager>();
+                _instance = UnityEngine.Object.FindObjectOfType<Milehigh.Core.CampaignManager>();
                 if (_instance == null)
                 {
                     UnityEngine.GameObject go = new UnityEngine.GameObject("CampaignManager");
-                    _instance = go.AddComponent<CampaignManager>();
+                    _instance = go.AddComponent<Milehigh.Core.CampaignManager>();
                 }
                 return _instance!;
             }
@@ -33,7 +33,7 @@ namespace Milehigh.Core
             }
             _instance = this;
             UnityEngine.Object.DontDestroyOnLoad(this.gameObject);
-            LoadCampaignData();
+            this.LoadCampaignData();
         }
 
         private void LoadCampaignData()
@@ -52,13 +52,13 @@ namespace Milehigh.Core
                 try
                 {
                     string json = System.IO.File.ReadAllText(filePath);
-                    currentCampaignData = UnityEngine.JsonUtility.FromJson<Milehigh.Data.HorizonGameData>(json);
+                    this.currentCampaignData = UnityEngine.JsonUtility.FromJson<Milehigh.Data.HorizonGameData>(json);
 
                     // 🛡️ Sentinel: Security validation of deserialized data.
                     // SECURITY: Perform validation after deserialization to ensure data integrity and fail securely.
-                    if (currentCampaignData != null && currentCampaignData.IsValid())
+                    if (this.currentCampaignData != null && this.currentCampaignData.IsValid())
                     {
-                        currentVoidSaturationLevel = currentCampaignData.metadata.voidSaturationLevel;
+                        this.currentVoidSaturationLevel = this.currentCampaignData.metadata.voidSaturationLevel;
                         // SECURITY: Log only the file name, not the absolute path, to prevent information disclosure.
                         UnityEngine.Debug.Log($"Campaign data loaded and validated from {fileName}");
                     }
@@ -66,7 +66,7 @@ namespace Milehigh.Core
                     {
                         // SECURITY: Fail securely by nullifying corrupted data and logging the error without leaking internal paths.
                         UnityEngine.Debug.LogError($"[Security] Campaign data from {fileName} failed validation or is malformed.");
-                        currentCampaignData = null!;
+                        this.currentCampaignData = null!;
                     }
                 }
                 catch (System.Exception ex)
@@ -74,7 +74,7 @@ namespace Milehigh.Core
                     // SECURITY: Catch exceptions during file read/JSON parse to fail securely and avoid leaking internal stack traces or absolute paths.
                     // Mask runtime exception details and log only the file name to prevent information disclosure.
                     UnityEngine.Debug.LogError($"[Security] Error loading campaign data from {fileName}: {ex.Message}");
-                    currentCampaignData = null!;
+                    this.currentCampaignData = null!;
                 }
             }
             else
@@ -86,16 +86,16 @@ namespace Milehigh.Core
 
         public void IncreaseVoidSaturation(float amount)
         {
-            currentVoidSaturationLevel = UnityEngine.Mathf.Clamp01(currentVoidSaturationLevel + amount);
-            UnityEngine.Debug.Log($"Void Saturation Level: {currentVoidSaturationLevel}");
-            SaveSecureData("VoidSaturation", currentVoidSaturationLevel.ToString());
+            this.currentVoidSaturationLevel = UnityEngine.Mathf.Clamp01(this.currentVoidSaturationLevel + amount);
+            UnityEngine.Debug.Log($"Void Saturation Level: {this.currentVoidSaturationLevel}");
+            this.SaveSecureData("VoidSaturation", this.currentVoidSaturationLevel.ToString());
         }
 
         public void SaveSecureData(string key, string data)
         {
             if (System.String.IsNullOrEmpty(key) || System.String.IsNullOrEmpty(data)) return;
 
-            string obfuscated = ProcessXOR(data);
+            string obfuscated = this.ProcessXOR(data);
             UnityEngine.PlayerPrefs.SetString($"SECURE_{key}", obfuscated);
             UnityEngine.PlayerPrefs.Save();
         }
@@ -105,7 +105,7 @@ namespace Milehigh.Core
             string obfuscated = UnityEngine.PlayerPrefs.GetString($"SECURE_{key}", "");
             if (System.String.IsNullOrEmpty(obfuscated)) return "";
 
-            return ProcessXOR(obfuscated);
+            return this.ProcessXOR(obfuscated);
         }
 
         private string ProcessXOR(string textToProcess)

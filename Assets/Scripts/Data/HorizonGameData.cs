@@ -11,7 +11,7 @@ namespace Milehigh.Data
     public class Metadata
     {
         [UnityEngine.Tooltip("The lighting state for the scene.")]
-        public LightingState lighting;
+        public Milehigh.Data.LightingState lighting;
         [UnityEngine.Tooltip("The name of the environment.")]
         public string environment = null!;
         [UnityEngine.Tooltip("System parity level for synchronization.")]
@@ -189,9 +189,9 @@ namespace Milehigh.Data
         [UnityEngine.TextArea(2, 5)]
         public string description = null!;
         [UnityEngine.Tooltip("List of interactive objects in this scenario.")]
-        public System.Collections.Generic.List<ObjectInteraction> interactiveObjects = null!;
+        public System.Collections.Generic.List<Milehigh.Data.ObjectInteraction> interactiveObjects = null!;
         [UnityEngine.Tooltip("List of dialogue lines in this scenario.")]
-        public System.Collections.Generic.List<Dialogue> dialogue = null!;
+        public System.Collections.Generic.List<Milehigh.Data.Dialogue> dialogue = null!;
 
         public bool IsValid()
         {
@@ -246,11 +246,11 @@ namespace Milehigh.Data
         [UnityEngine.Tooltip("Unique ID for the scene.")]
         public string sceneId = null!;
         [UnityEngine.Tooltip("Metadata for the scene.")]
-        public Metadata metadata = null!;
+        public Milehigh.Data.Metadata metadata = null!;
         [UnityEngine.Tooltip("List of character profiles in this campaign.")]
-        public System.Collections.Generic.List<CharacterProfile> characters = null!;
+        public System.Collections.Generic.List<Milehigh.Data.CharacterProfile> characters = null!;
         [UnityEngine.Tooltip("List of scenarios in this campaign.")]
-        public System.Collections.Generic.List<SceneScenario> scenarios = null!;
+        public System.Collections.Generic.List<Milehigh.Data.SceneScenario> scenarios = null!;
 
         public bool IsValid()
         {
