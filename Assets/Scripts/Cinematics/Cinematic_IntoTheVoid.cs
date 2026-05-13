@@ -106,14 +106,23 @@ namespace Milehigh.Cinematics
                     SkipHintText.gameObject.SetActive(true);
                 }
             }
+
+            // Palette: Subtle pulse effect for the skip hint to improve discoverability.
+            if (SkipHintText != null && SkipHintText.gameObject.activeInHierarchy)
+            {
+                Color c = SkipHintText.color;
+                c.a = 0.5f + Mathf.PingPong(Time.time * 0.5f, 0.5f);
+                SkipHintText.color = c;
+            }
         }
 
         public void ShowDialogue(string speaker, string message)
         {
             if (typingCoroutine != null) StopCoroutine(typingCoroutine);
 
-            // UX Enhancement: Reset idle timer for each new dialogue line.
+            // UX Enhancement: Reset idle timer and interaction state for each new dialogue line.
             idleTimer = 0f;
+            playerInteracted = false;
 
             // UX Enhancement: Trigger a subtle "Pop" animation when the speaker changes.
             if (SpeakerNameText.text != speaker)
@@ -224,7 +233,6 @@ namespace Milehigh.Cinematics
             }
 
             DialogueText.maxVisibleCharacters = totalCharacters;
-            skipRequested = false;
             typingCoroutine = null;
         }
 
