@@ -183,11 +183,10 @@ namespace Milehigh.Cinematics
             AudioSource? voiceSource = speaker switch
             {
                 "Sky.ix" => Skyix_VoiceSource,
-                "Kai" => Kai_Character?.GetComponent<AudioSource>(), // Fallback attempt
+                "Kai" => Kai_VoiceSource,
                 "Delilah" => Delilah_VoiceSource,
                 _ => null
             };
-            if (speaker == "Kai") voiceSource = Kai_VoiceSource; // Ensure Kai is handled correctly
 
             if (voiceSource != null) voiceSource.Play();
 
@@ -299,9 +298,6 @@ namespace Milehigh.Cinematics
         private IEnumerator Cinematic_IntoTheVoid_Sequence()
         {
             yield return FadeDialogueBox(1.0f, 0.5f);
-            yield return GetWait(1.0f);
-            DialogueBox.SetActive(true);
-            yield return FadeDialogue(1f, 0.5f);
             yield return WaitForSecondsOrSkip(1.0f);
 
             // Line 1: Delilah
@@ -341,25 +337,8 @@ namespace Milehigh.Cinematics
             yield return PlayDialogueLine("Sky.ix", "My family is my anchor. They are the reason I can walk through this hell and not become a monster like you. And I am bringing them home.", 3.0f);
 
             yield return FadeDialogueBox(0f, 0.5f);
-            Debug.Log("Cinematic Sequence Complete.");
-            if (typingCoroutine != null) StopCoroutine(typingCoroutine);
-            yield return FadeDialogue(0f, 0.5f);
-            DialogueBox.SetActive(false);
-
             Debug.Log("Cinematic Sequence Complete: [Deep within the anti-reality of ŤĤÊ VØĪĐ...]");
-        }
-
-        private IEnumerator FadeDialogue(float targetAlpha, float duration)
-        {
-            float startAlpha = DialogueCanvasGroup.alpha;
-            float elapsed = 0f;
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                DialogueCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, elapsed / duration);
-                yield return null;
-            }
-            DialogueCanvasGroup.alpha = targetAlpha;
+            if (typingCoroutine != null) StopCoroutine(typingCoroutine);
         }
     }
 }
