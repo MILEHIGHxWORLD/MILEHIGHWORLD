@@ -369,3 +369,7 @@
 ## 2024-05-30 - Cache GetComponent Calls in Coroutines
 **Learning:** Repeatedly calling `GetComponent` within coroutines or updates incurs unnecessary engine boundary crossing overhead, which can cause micro-stutters during execution.
 **Action:** Always pre-cache components like `Animator` during initialization (`Start` or `Awake`) to ensure O(1) field access during intensive cinematic or runtime loops.
+
+## 2024-05-31 - [Redundant Material Property Updates]
+**Learning:** Setting the same material properties (like TextMeshPro outline width) multiple times in a single frame (e.g., in Start) causes unnecessary engine boundary calls and state changes.
+**Action:** Consolidate material property initializations into a single block with the final desired values to minimize overhead during object initialization.
