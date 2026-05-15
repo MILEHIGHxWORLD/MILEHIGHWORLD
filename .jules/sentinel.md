@@ -233,3 +233,7 @@
 **Vulnerability:** Insecure Direct Object Reference (IDOR) protection using simple string matching on GameObject names can be bypassed if the lookup utility (like `GameObject.Find`) supports hierarchical paths. Prepending a slash (e.g., `/CampaignManager`) could bypass a blacklist check for `CampaignManager`.
 **Learning:** Unity's `GameObject.Find` can take a path. Security boundaries for object lookups must account for this by normalizing or sanitizing the input ID before validation.
 **Prevention:** Always sanitize or normalize external IDs (e.g., using `TrimStart('/')`) before checking them against a protected list of system objects.
+## 2024-05-24 - IDOR Bypass via Path-like Object IDs and Protected Manager Expansion
+**Vulnerability:** IDOR vulnerability in `SceneDirector.cs` where an attacker could bypass the `protectedManagers` check by prepending a slash to the object ID (e.g., `/CampaignManager`). Additionally, `GlobalResonanceManager` was missing from the protected managers list.
+**Learning:** Unity's `GameObject.Find` supports hierarchical paths, so exact string matching against a whitelist/blacklist must be preceded by trimming leading directory separators.
+**Prevention:** Always use `.TrimStart('/')` on external object IDs before comparing them against protected manager lists to prevent path-based bypasses in scene-wide lookups.
