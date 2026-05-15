@@ -233,7 +233,7 @@ namespace Milehigh.Cinematics
             typingCoroutine = null;
         }
 
-        private System.Collections.IEnumerator WaitForSecondsOrSkip(float duration)
+        private IEnumerator WaitForSecondsOrSkip(float duration)
         {
             float elapsed = 0f;
             while (elapsed < duration && !skipRequested)
@@ -244,7 +244,7 @@ namespace Milehigh.Cinematics
             skipRequested = false;
         }
 
-        private System.Collections.IEnumerator PlayDialogueLine(string speaker, string message, float readingPause)
+        private IEnumerator PlayDialogueLine(string speaker, string message, float readingPause)
         {
             ShowDialogue(speaker, message);
             while (typingCoroutine != null) yield return null;
@@ -272,7 +272,7 @@ namespace Milehigh.Cinematics
             if (targetAlpha <= 0) DialogueBox.SetActive(false);
         }
 
-        private System.Collections.IEnumerator PopScale(UnityEngine.Transform target, float duration, float scaleFactor)
+        private IEnumerator PopScale(UnityEngine.Transform target, float duration, float scaleFactor)
         {
             UnityEngine.Vector3 initialScale = originalSpeakerScale;
             float elapsed = 0f;
