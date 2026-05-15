@@ -77,6 +77,17 @@ namespace Milehigh.Cinematics
             _originalDialoguePos = _dialogueRect.anchoredPosition;
             originalSpeakerScale = SpeakerNameText.transform.localScale;
 
+            // Palette: Accessibility - Text outline for better contrast in dark scenes.
+            if (SpeakerNameText.fontMaterial != null)
+            {
+                SpeakerNameText.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.25f);
+                SpeakerNameText.fontMaterial.SetColor(ShaderUtilities.ID_OutlineColor, Color.black);
+            }
+            if (DialogueText.fontMaterial != null)
+            {
+                DialogueText.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.25f);
+                DialogueText.fontMaterial.SetColor(ShaderUtilities.ID_OutlineColor, Color.black);
+            }
 bolt/optimize-getcomponent-3892746394166420668            if (SkipHintText != null) SkipHintText.gameObject.SetActive(false);
 
             // ⚡ Bolt: Pre-cache animators to eliminate GetComponent allocations during the cinematic sequence.
