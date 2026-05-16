@@ -1,3 +1,5 @@
+using System;
+
 namespace Milehigh.Core
 {
     [UnityEngine.DefaultExecutionOrder(-100)]
