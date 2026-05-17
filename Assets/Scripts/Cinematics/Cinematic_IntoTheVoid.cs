@@ -43,6 +43,7 @@ namespace Milehigh.Cinematics
         private UnityEngine.Coroutine? popScaleCoroutine;
         private float currentTypingSpeed;
         private string currentSpeakerHex = "FFFFFF";
+        private UnityEngine.Color currentSpeakerColor = UnityEngine.Color.white;
         private bool skipRequested;
         private float idleTimer;
         private bool playerInteracted;
@@ -110,6 +111,30 @@ namespace Milehigh.Cinematics
 
         private void Update()
         {
+            // Palette: Pulse the completion cue ('▽') alpha when the dialogue is finished revealing.
+            if (typingCoroutine == null && DialogueBox != null && DialogueBox.activeInHierarchy && DialogueText != null)
+            {
+                DialogueText.ForceMeshUpdate();
+                var textInfo = DialogueText.textInfo;
+                if (textInfo.characterCount > 0)
+                {
+                    int lastCharIndex = textInfo.characterCount - 1;
+                    if (textInfo.characterInfo[lastCharIndex].isVisible)
+                    {
+                        float pulse = UnityEngine.Mathf.PingPong(UnityEngine.Time.time * 2.5f, 0.5f) + 0.5f;
+                        UnityEngine.Color32 pulseColor = currentSpeakerColor;
+                        pulseColor.a = (byte)(pulse * 255);
+
+                        int materialIndex = textInfo.characterInfo[lastCharIndex].materialReferenceIndex;
+                        int vertexIndex = textInfo.characterInfo[lastCharIndex].vertexIndex;
+                        UnityEngine.Color32[] vertexColors = textInfo.meshInfo[materialIndex].colors32;
+
+                        for (int i = 0; i < 4; i++) vertexColors[vertexIndex + i] = pulseColor;
+                        DialogueText.UpdateVertexData(TMPro.TMP_VertexDataUpdateFlags.Colors32);
+                    }
+                }
+            }
+
             if (UnityEngine.Input.anyKeyDown)
             {
                 skipRequested = true;
@@ -166,6 +191,7 @@ namespace Milehigh.Cinematics
             else if (speaker == "Sky.ix") multiplier = skyixSpeedMultiplier;
 
             SpeakerNameText.color = speakerColor;
+            currentSpeakerColor = speakerColor;
             currentSpeakerHex = UnityEngine.ColorUtility.ToHtmlStringRGB(speakerColor);
             currentTypingSpeed = baseTypingSpeed * multiplier;
 
@@ -185,7 +211,6 @@ namespace Milehigh.Cinematics
             typingCoroutine = this.StartCoroutine(TypeDialogue(message));
         }
 
-        private IEnumerator TypeDialogue(string message)
         private System.Collections.IEnumerator TypeDialogue(string message)
         {
             // Palette: Pre-append completion cue and use maxVisibleCharacters to ensure layout stability.
@@ -240,7 +265,7 @@ namespace Milehigh.Cinematics
             typingCoroutine = null;
         }
 
-        private IEnumerator WaitForSecondsOrSkip(float duration)
+        private System.Collections.IEnumerator WaitForSecondsOrSkip(float duration)
         {
             float elapsed = 0f;
             while (elapsed < duration && !skipRequested)
@@ -251,23 +276,18 @@ namespace Milehigh.Cinematics
             skipRequested = false;
         }
 
-        private IEnumerator PlayDialogueLine(string speaker, string message, float readingPause)
+        private System.Collections.IEnumerator PlayDialogueLine(string speaker, string message, float readingPause)
         {
             ShowDialogue(speaker, message);
             while (typingCoroutine != null) yield return null;
             yield return WaitForSecondsOrSkip(readingPause);
         }
 
-        private IEnumerator FadeDialogueBox(float targetAlpha, float duration)
-        {
-            if (targetAlpha > 0) DialogueBox.SetActive(true);
-            float startAlpha = DialogueCanvasGroup.alpha;
-            UnityEngine.Vector2 startPos = _originalDialoguePos + (targetAlpha > 0 ? UnityEngine.Vector2.down * 30f : UnityEngine.Vector2.zero);
-            UnityEngine.Vector2 endPos = _originalDialoguePos + (targetAlpha > 0 ? UnityEngine.Vector2.zero : UnityEngine.Vector2.down * 30f);
         private System.Collections.IEnumerator FadeDialogueBox(float targetAlpha, float duration)
         {
             if (targetAlpha > 0) DialogueBox.SetActive(true);
             float startAlpha = DialogueCanvasGroup.alpha;
+
             UnityEngine.Vector2 startPos = _originalDialoguePos + (targetAlpha > 0 ? new UnityEngine.Vector2(0, -30f) : UnityEngine.Vector2.zero);
             UnityEngine.Vector2 endPos = _originalDialoguePos + (targetAlpha <= 0 ? new UnityEngine.Vector2(0, -30f) : UnityEngine.Vector2.zero);
 
@@ -275,18 +295,16 @@ namespace Milehigh.Cinematics
             while (elapsed < duration)
             {
                 elapsed += UnityEngine.Time.deltaTime;
-                float t = elapsed / duration;
-                DialogueCanvasGroup.alpha = UnityEngine.Mathf.Lerp(startAlpha, targetAlpha, t);
-                if (_dialogueRect != null) _dialogueRect.anchoredPosition = UnityEngine.Vector2.Lerp(startPos, endPos, t);
+                float t = UnityEngine.Mathf.Clamp01(elapsed / duration);
+                float smoothT = UnityEngine.Mathf.SmoothStep(0f, 1f, t);
+
+                DialogueCanvasGroup.alpha = UnityEngine.Mathf.Lerp(startAlpha, targetAlpha, smoothT);
+                if (_dialogueRect != null) _dialogueRect.anchoredPosition = UnityEngine.Vector2.Lerp(startPos, endPos, smoothT);
                 yield return null;
             }
+
             DialogueCanvasGroup.alpha = targetAlpha;
             if (_dialogueRect != null) _dialogueRect.anchoredPosition = endPos;
-                _dialogueRect.anchoredPosition = UnityEngine.Vector2.Lerp(startPos, endPos, t);
-                yield return null;
-            }
-            DialogueCanvasGroup.alpha = targetAlpha;
-            _dialogueRect.anchoredPosition = endPos;
             if (targetAlpha <= 0) DialogueBox.SetActive(false);
         }
 
