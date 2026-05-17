@@ -213,3 +213,36 @@
 **Vulnerability:** Massive "code rot" with multiple redundant, conflicting, and syntactically invalid 'IsValid()' methods and 'try-catch' blocks across core data and management scripts. This led to unpredictable security postures, potential information disclosure (absolute paths in logs), and vulnerability to Resource Exhaustion (DoS) via unconstrained JSON payloads.
 **Learning:** Overlapping and improperly merged security patches can create "syntax soup" that disables the very protections they intend to provide. High-frequency edits with automated tools without manual consolidation can lead to multiple method signatures and mismatched braces.
 **Prevention:** Always consolidate security validation into a single, robust 'IsValid()' framework. Enforce strict 'Sentinel Standard' resource limits (string lengths, collection counts) and range checks at the point of ingestion. Consistently use the 'fail secure' pattern by nulling data on validation failure and masking internal system details in logs.
+
+## 2024-05-24 - Consolidated IDOR protections in ApplyInteraction
+**Vulnerability:** ApplyInteraction had an excessive amount of duplicate and malformed IDOR checks, leading to a large block of unmaintainable code.
+**Learning:** When automated tools repeatedly apply patches, they can create duplicate logic. It is important to consolidate these checks into a single, clean validation step.
+**Prevention:** Use a single blocklist check for protected managers at the beginning of the interaction application.
+
+## 2025-05-15 - Consolidating Security Validation 'Syntax Soup'
+**Vulnerability:** Found extreme 'code rot' in `HorizonGameData.cs` where multiple conflicting, redundant, and syntactically invalid `IsValid()` methods were nested or duplicated. This effectively disabled or bypassed intended security checks and resource limits.
+**Learning:** High-frequency, automated security patching can lead to "syntax soup" if not consolidated. Broken validation logic is equivalent to no validation, leaving the application vulnerable to DoS (resource exhaustion) and malformed data ingestion.
+**Prevention:** Consolidate all validation into a single, robust `IsValid()` method per class. Enforce strict resource limits (string lengths, collection sizes) and always verify the final source code integrity (e.g., via compilation checks) after automated edits.
+
+## 2024-05-24 - Resolving Data Ingestion 'Syntax Soup' and Broken Validation
+**Vulnerability:** Found extreme "code rot" and "syntax soup" in `HorizonGameData.cs` and `CharacterFactory.cs`, where multiple redundant, malformed, and contradictory `IsValid()` methods and variable declarations were introduced by botched merges. This effectively bypassed or broke security validation for external JSON data.
+**Learning:** High-frequency automated patching can lead to overlapping logic that disables the very protections it intends to provide. Broken validation logic is equivalent to no validation, leaving the application vulnerable to DoS (resource exhaustion) and malformed data ingestion.
+**Prevention:** Consolidate all validation into single, robust methods (`IsValid`) and strictly enforce "Sentinel Standard" resource limits (string lengths, collection counts) at the point of ingestion. Always verify syntactic integrity via compilation checks after resolving complex merge-induced duplication.
+
+## 2026-05-14 - IDOR Bypass via Path-like Object IDs in Unity
+**Vulnerability:** Insecure Direct Object Reference (IDOR) protection using simple string matching on GameObject names can be bypassed if the lookup utility (like `GameObject.Find`) supports hierarchical paths. Prepending a slash (e.g., `/CampaignManager`) could bypass a blacklist check for `CampaignManager`.
+**Learning:** Unity's `GameObject.Find` can take a path. Security boundaries for object lookups must account for this by normalizing or sanitizing the input ID before validation.
+**Prevention:** Always sanitize or normalize external IDs (e.g., using `TrimStart('/')`) before checking them against a protected list of system objects.
+## 2024-05-24 - IDOR Bypass via Path-like Object IDs and Protected Manager Expansion
+**Vulnerability:** IDOR vulnerability in `SceneDirector.cs` where an attacker could bypass the `protectedManagers` check by prepending a slash to the object ID (e.g., `/CampaignManager`). Additionally, `GlobalResonanceManager` was missing from the protected managers list.
+**Learning:** Unity's `GameObject.Find` supports hierarchical paths, so exact string matching against a whitelist/blacklist must be preceded by trimming leading directory separators.
+**Prevention:** Always use `.TrimStart('/')` on external object IDs before comparing them against protected manager lists to prevent path-based bypasses in scene-wide lookups.
+## 2024-05-24 - Expensive Native Boundary Crossing in Cryptographic Salt
+**Vulnerability:** The `ProcessXOR` method repeatedly queries `UnityEngine.SystemInfo.deviceUniqueIdentifier` to generate a salt for obfuscation. This causes an expensive native C++ boundary crossing on every save/load operation, leading to potential micro-stutters. Furthermore, if the identifier is unavailable, it defaults to a hardcoded salt `MILEHIGH_FALLBACK_SALT`, which is insecure and predictable.
+**Learning:** Frequent native boundary crossings in Unity should be avoided, especially in critical paths like saving/loading data. Hardware identifiers like `deviceUniqueIdentifier` should be cached upon first access.
+**Prevention:** Cache hardware identifiers in a static variable upon first access to prevent I/O stutters during frequent runtime operations. Re-evaluate the necessity of XOR obfuscation and consider stronger encryption if sensitive data is involved.
+
+## 2024-05-16 - Hierarchical IDOR Bypass and Robust Numeric Validation
+**Vulnerability:** IDOR protection in `SceneDirector.cs` could be bypassed by using path segments (e.g., "Parent/CampaignManager") because it only checked the full trimmed ID against protected managers. Additionally, floating-point fields in `HorizonGameData.cs` lacked `NaN` and `Infinity` validation, which could lead to "physics explosions" or logic bypasses.
+**Learning:** Unity's `GameObject.Find` supports hierarchical paths, so security boundaries must verify *every* segment of a path-like ID, not just the leaf or the full string. Furthermore, standard range checks (`x >= 0`) are insufficient for untrusted numeric input as they may not catch `NaN` or `Infinity`.
+**Prevention:** Split hierarchical object IDs by '/' and verify every resulting segment against the `_protectedManagers` whitelist. Always include `float.IsNaN` and `float.IsInfinity` checks in data validation logic for deserialized floating-point values.
