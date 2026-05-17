@@ -420,6 +420,16 @@ namespace Milehigh.Cinematics
         private bool _isSkipHintActive;
         private Vector3 originalSpeakerScale;
 
+        // BOLT: Cache speaker styles to avoid repeated string conversions and switch evaluations.
+        private struct SpeakerStyle
+        {
+            public UnityEngine.Color color;
+            public string hexColor;
+            public float speedMultiplier;
+            public UnityEngine.AudioSource? voiceSource;
+        }
+        private readonly System.Collections.Generic.Dictionary<string, SpeakerStyle> _speakerStyles = new System.Collections.Generic.Dictionary<string, SpeakerStyle>();
+
         // BOLT: Cache for WaitForSeconds to eliminate GC allocations during coroutine execution.
         private static readonly Dictionary<int, WaitForSeconds> _waitForSecondsCache = new Dictionary<int, WaitForSeconds>();
         private RectTransform _dialogueRect = null!;
@@ -456,6 +466,11 @@ namespace Milehigh.Cinematics
             if (Skyix_Character != null) _skyixAnimator = Skyix_Character.GetComponent<Animator>();
             if (Kai_Character != null) _kaiAnimator = Kai_Character.GetComponent<Animator>();
             if (Delilah_Character != null) _delilahAnimator = Delilah_Character.GetComponent<Animator>();
+
+            // ⚡ Bolt: Pre-initialize speaker styles to eliminate O(N) lookups and GC allocations in ShowDialogue.
+            _speakerStyles["Sky.ix"] = new SpeakerStyle { color = UnityEngine.Color.cyan, hexColor = UnityEngine.ColorUtility.ToHtmlStringRGB(UnityEngine.Color.cyan), speedMultiplier = skyixSpeedMultiplier, voiceSource = Skyix_VoiceSource };
+            _speakerStyles["Kai"] = new SpeakerStyle { color = new UnityEngine.Color(1f, 0.84f, 0f), hexColor = UnityEngine.ColorUtility.ToHtmlStringRGB(new UnityEngine.Color(1f, 0.84f, 0f)), speedMultiplier = kaiSpeedMultiplier, voiceSource = Kai_VoiceSource };
+            _speakerStyles["Delilah"] = new SpeakerStyle { color = new UnityEngine.Color(0.6f, 0.1f, 0.9f), hexColor = UnityEngine.ColorUtility.ToHtmlStringRGB(new UnityEngine.Color(0.6f, 0.1f, 0.9f)), speedMultiplier = 1.0f, voiceSource = Delilah_VoiceSource };
 
             if (SkipHintText == null && DialogueBox != null)
             {
@@ -515,6 +530,9 @@ namespace Milehigh.Cinematics
                 skipRequested = true;
                 playerInteracted = true;
                 idleTimer = 0f;
+                if (_isSkipHintActive)
+                {
+                    if (SkipHintText != null) SkipHintText.gameObject.SetActive(false);
                 if (SkipHintText != null)
                 {
                     SkipHintText.gameObject.SetActive(false);
@@ -569,6 +587,9 @@ namespace Milehigh.Cinematics
             // UX Enhancement: Reset idle timer and interaction state for each new dialogue line.
             idleTimer = 0f;
             playerInteracted = false;
+            if (_isSkipHintActive)
+            {
+                if (SkipHintText != null) SkipHintText.gameObject.SetActive(false);
             if (SkipHintText != null)
             {
                 SkipHintText.gameObject.SetActive(false);
@@ -583,6 +604,15 @@ namespace Milehigh.Cinematics
 
             SpeakerNameText.text = speaker;
 
+            // ⚡ Bolt: O(1) lookup from pre-cached speaker styles.
+            if (_speakerStyles.TryGetValue(speaker, out SpeakerStyle style))
+            {
+                SpeakerNameText.color = style.color;
+                currentSpeakerHex = style.hexColor;
+                currentTypingSpeed = baseTypingSpeed * style.speedMultiplier;
+                if (style.voiceSource != null) style.voiceSource.Play();
+            }
+            else
             if (i > 0 && i < totalCharacters)
             {
                 char c = DialogueText.textInfo.characterInfo[i - 1].character;
@@ -987,17 +1017,16 @@ namespace Milehigh.Cinematics
             // Audio: Play the character's voice line if assigned.
             AudioSource? voiceSource = speaker switch
             {
-                "Sky.ix" => Skyix_VoiceSource,
-                "Kai" => Kai_VoiceSource,
-                "Delilah" => Delilah_VoiceSource,
-                _ => null
-            };
+                SpeakerNameText.color = UnityEngine.Color.white;
+                currentSpeakerHex = "FFFFFF";
+                currentTypingSpeed = baseTypingSpeed;
+            }
 
-            if (voiceSource != null) voiceSource.Play();
-
+            skipRequested = false;
             typingCoroutine = this.StartCoroutine(TypeDialogue(message));
         }
 
+        private System.Collections.IEnumerator TypeDialogue(string message)
         private IEnumerator TypeDialogue(string message)
         {
             // Palette: Pre-append completion cue and use maxVisibleCharacters to ensure layout stability.
@@ -1072,6 +1101,7 @@ namespace Milehigh.Cinematics
             yield return WaitForSecondsOrSkip(readingPause);
         }
 
+        private System.Collections.IEnumerator FadeDialogueBox(float targetAlpha, float duration)
         private IEnumerator FadeDialogueBox(float targetAlpha, float duration)
         {
             if (targetAlpha > 0)
