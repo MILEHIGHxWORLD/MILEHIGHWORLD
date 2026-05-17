@@ -66,7 +66,6 @@ namespace Milehigh.Cinematics
 
         private void Start()
         {
-            // 🛡️ Sentinel: Defensive programming - Ensure UI components are assigned.
             if (DialogueBox == null || SpeakerNameText == null || DialogueText == null || DialogueCanvasGroup == null)
             {
                 UnityEngine.Debug.LogError("Missing UI components required for cinematic. Aborting.");
@@ -84,7 +83,6 @@ namespace Milehigh.Cinematics
             if (Kai_Character != null) _kaiAnimator = Kai_Character.GetComponent<UnityEngine.Animator>();
             if (Delilah_Character != null) _delilahAnimator = Delilah_Character.GetComponent<UnityEngine.Animator>();
 
-            // Palette: Programmatically locate SkipHint if not assigned.
             if (SkipHintText == null && DialogueBox != null)
             {
                 UnityEngine.Transform hintTransform = DialogueBox.transform.Find("SkipHint");
@@ -112,7 +110,6 @@ namespace Milehigh.Cinematics
 
         private void Update()
         {
-            // ⚡ Bolt: Precise skip detection for refined UX.
             if (UnityEngine.Input.anyKeyDown)
             {
                 skipRequested = true;
@@ -121,7 +118,6 @@ namespace Milehigh.Cinematics
                 if (SkipHintText != null) SkipHintText.gameObject.SetActive(false);
             }
 
-            // UX Enhancement: Show skip hint after 2 seconds of idleness.
             if (DialogueBox != null && DialogueBox.activeInHierarchy && !playerInteracted && !skipRequested)
             {
                 idleTimer += UnityEngine.Time.deltaTime;
@@ -131,11 +127,10 @@ namespace Milehigh.Cinematics
                 }
             }
 
-            // Palette: Add a gentle alpha pulse to the skip hint to improve discoverability.
             if (SkipHintText != null && SkipHintText.gameObject.activeInHierarchy)
             {
-                float alpha = Mathf.PingPong(Time.time * 0.5f, 0.5f) + 0.5f;
-                Color c = SkipHintText.color;
+                float alpha = UnityEngine.Mathf.PingPong(UnityEngine.Time.time * 0.5f, 0.5f) + 0.5f;
+                UnityEngine.Color c = SkipHintText.color;
                 c.a = alpha;
                 SkipHintText.color = c;
             }
@@ -150,7 +145,6 @@ namespace Milehigh.Cinematics
             playerInteracted = false;
             if (SkipHintText != null) SkipHintText.gameObject.SetActive(false);
 
-            // UX Enhancement: Trigger a subtle "Pop" animation when the speaker changes.
             if (SpeakerNameText.text != speaker)
             {
                 if (popScaleCoroutine != null) this.StopCoroutine(popScaleCoroutine);
@@ -159,7 +153,6 @@ namespace Milehigh.Cinematics
 
             SpeakerNameText.text = speaker;
 
-            // Apply speaker-specific speed multipliers and colors.
             float multiplier = 1.0f;
             UnityEngine.Color speakerColor = speaker switch
             {
@@ -176,7 +169,6 @@ namespace Milehigh.Cinematics
             currentSpeakerHex = UnityEngine.ColorUtility.ToHtmlStringRGB(speakerColor);
             currentTypingSpeed = baseTypingSpeed * multiplier;
 
-            // Palette: Reset skip request only at the start of a new dialogue line.
             skipRequested = false;
 
             // Audio: Play the character's voice line if assigned.
@@ -193,6 +185,7 @@ namespace Milehigh.Cinematics
             typingCoroutine = this.StartCoroutine(TypeDialogue(message));
         }
 
+        private IEnumerator TypeDialogue(string message)
         private System.Collections.IEnumerator TypeDialogue(string message)
         {
             // Palette: Pre-append completion cue and use maxVisibleCharacters to ensure layout stability.
@@ -247,7 +240,7 @@ namespace Milehigh.Cinematics
             typingCoroutine = null;
         }
 
-        private System.Collections.IEnumerator WaitForSecondsOrSkip(float duration)
+        private IEnumerator WaitForSecondsOrSkip(float duration)
         {
             float elapsed = 0f;
             while (elapsed < duration && !skipRequested)
@@ -258,13 +251,19 @@ namespace Milehigh.Cinematics
             skipRequested = false;
         }
 
-        private System.Collections.IEnumerator PlayDialogueLine(string speaker, string message, float readingPause)
+        private IEnumerator PlayDialogueLine(string speaker, string message, float readingPause)
         {
             ShowDialogue(speaker, message);
             while (typingCoroutine != null) yield return null;
             yield return WaitForSecondsOrSkip(readingPause);
         }
 
+        private IEnumerator FadeDialogueBox(float targetAlpha, float duration)
+        {
+            if (targetAlpha > 0) DialogueBox.SetActive(true);
+            float startAlpha = DialogueCanvasGroup.alpha;
+            UnityEngine.Vector2 startPos = _originalDialoguePos + (targetAlpha > 0 ? UnityEngine.Vector2.down * 30f : UnityEngine.Vector2.zero);
+            UnityEngine.Vector2 endPos = _originalDialoguePos + (targetAlpha > 0 ? UnityEngine.Vector2.zero : UnityEngine.Vector2.down * 30f);
         private System.Collections.IEnumerator FadeDialogueBox(float targetAlpha, float duration)
         {
             if (targetAlpha > 0) DialogueBox.SetActive(true);
@@ -278,6 +277,11 @@ namespace Milehigh.Cinematics
                 elapsed += UnityEngine.Time.deltaTime;
                 float t = elapsed / duration;
                 DialogueCanvasGroup.alpha = UnityEngine.Mathf.Lerp(startAlpha, targetAlpha, t);
+                if (_dialogueRect != null) _dialogueRect.anchoredPosition = UnityEngine.Vector2.Lerp(startPos, endPos, t);
+                yield return null;
+            }
+            DialogueCanvasGroup.alpha = targetAlpha;
+            if (_dialogueRect != null) _dialogueRect.anchoredPosition = endPos;
                 _dialogueRect.anchoredPosition = UnityEngine.Vector2.Lerp(startPos, endPos, t);
                 yield return null;
             }
@@ -286,7 +290,7 @@ namespace Milehigh.Cinematics
             if (targetAlpha <= 0) DialogueBox.SetActive(false);
         }
 
-        private System.Collections.IEnumerator PopScale(UnityEngine.Transform target, float duration, float scaleFactor)
+        private IEnumerator PopScale(UnityEngine.Transform target, float duration, float scaleFactor)
         {
             UnityEngine.Vector3 initialScale = originalSpeakerScale;
             float elapsed = 0f;
@@ -301,9 +305,8 @@ namespace Milehigh.Cinematics
             popScaleCoroutine = null;
         }
 
-        private System.Collections.IEnumerator Cinematic_IntoTheVoid_Sequence()
+        private IEnumerator Cinematic_IntoTheVoid_Sequence()
         {
-            // ⚡ Bolt: Removed redundant FadeDialogue calls as FadeDialogueBox already handles the CanvasGroup alpha.
             yield return FadeDialogueBox(1.0f, 0.5f);
             yield return GetWait(1.0f);
             yield return WaitForSecondsOrSkip(1.0f);
