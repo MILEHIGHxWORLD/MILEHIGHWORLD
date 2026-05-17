@@ -525,6 +525,10 @@ namespace Milehigh.Cinematics
                 }
             }
 
+        private void Update()
+        {
+            // ⚡ Bolt: Precise skip detection for refined UX.
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.Space) || UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.Return) || UnityEngine.Input.GetMouseButtonDown(0))
             if (Input.anyKeyDown)
             {
                 skipRequested = true;
