@@ -1,11 +1,15 @@
+// Copyright 2026 MILEHIGH-WORLD LLC. All Rights Reserved.
+// PROPRIETARY AND CONFIDENTIAL: DO NOT DISTRIBUTE.
+
 using UnityEngine;
 using UnityEditor;
 using System.IO;
+using MilehighWorld.Data;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Milehigh.Data;
 
-namespace Milehigh.Editor
+namespace MilehighWorld.Editor
 {
     public class CharacterFactory : EditorWindow
     {
