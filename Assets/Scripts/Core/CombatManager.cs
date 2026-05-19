@@ -1,6 +1,10 @@
-using UnityEngine;
+// Copyright 2026 MILEHIGH-WORLD LLC. All Rights Reserved.
+// PROPRIETARY AND CONFIDENTIAL: DO NOT DISTRIBUTE.
 
-namespace Milehigh.World.Core
+using UnityEngine;
+using MilehighWorld.Data;
+
+namespace MilehighWorld.Core
 {
     public class CombatManager : MonoBehaviour
     {
@@ -8,31 +12,33 @@ namespace Milehigh.World.Core
 
         private void Awake()
         {
-            if (Instance == null) { Instance = this; }
-            else { Destroy(gameObject); }
-        }
-
-        public float CalculateVanguardDamage(CharacterData attacker, float baseDamage)
-        {
-            float integrityMult = GlobalResonanceManager.Instance.GetIntegrityMultiplier();
-            // Formula: $D_{total} = (D_{base} \cdot M_{vanguard}) \cdot I_{multiplier}$
-            return (baseDamage * attacker.vanguardMultiplier) * integrityMult;
-        }
-
-        private static readonly int GlitchIntensityId = Shader.PropertyToID("_GlitchIntensity");
-        private static MaterialPropertyBlock? _glitchPropertyBlock;
-
-        public void TriggerEnemyGlitch(GameObject target)
-        {
-            if (target.TryGetComponent<Renderer>(out Renderer ren))
+            if (Instance == null)
             {
-                // ⚡ Bolt: Use MaterialPropertyBlock to prevent material instantiation and preserve draw call batching.
-                if (_glitchPropertyBlock == null) _glitchPropertyBlock = new MaterialPropertyBlock();
-
-                ren.GetPropertyBlock(_glitchPropertyBlock);
-                _glitchPropertyBlock.SetFloat(GlitchIntensityId, 1.0f);
-                ren.SetPropertyBlock(_glitchPropertyBlock);
+                Instance = this;
+            }
+            else
+            {
+                Destroy(gameObject);
             }
         }
+
+        public float CalculateVanguardDamage(RuntimeCharacterData attacker, RuntimeCharacterData target, float baseWeaponDamage)
+        {
+            float finalDamage = baseWeaponDamage;
+
+            if (target.IsVoidCorrupted && (attacker.TechAlignment == "Arcane" || attacker.TechAlignment == "Hybrid"))
+            {
+                finalDamage *= 1.5f;
+                Debug.Log($"<color=orange>[COMBAT]: {attacker.Id} triggered Arcane Resonance against Void Corruption!</color>");
+            }
+
+            if (GlobalResonanceManager.Instance != null)
+            {
+                finalDamage *= GlobalResonanceManager.Instance.GetIntegrityMultiplier();
+            }
+
+            return finalDamage;
+        }
+
     }
 }

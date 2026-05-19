@@ -1,8 +1,11 @@
+// Copyright 2026 MILEHIGH-WORLD LLC. All Rights Reserved.
+// PROPRIETARY AND CONFIDENTIAL: DO NOT DISTRIBUTE.
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 
-namespace Milehigh.SceneManagement
+namespace MilehighWorld.SceneManagement
 {
     public class AsyncSceneLoader : MonoBehaviour
     {

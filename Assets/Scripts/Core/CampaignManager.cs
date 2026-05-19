@@ -1,44 +1,50 @@
-using UnityEngine;
-using System;
-using System.IO;
-using Milehigh.Data;
+// Copyright 2026 MILEHIGH-WORLD LLC. All Rights Reserved.
+// PROPRIETARY AND CONFIDENTIAL: DO NOT DISTRIBUTE.
 
-namespace Milehigh.Core
+using System;
+using UnityEngine;
+using System.IO;
+using MilehighWorld.Data;
+
+namespace MilehighWorld.Core
 {
-    public class CampaignManager : MonoBehaviour
+    [UnityEngine.DefaultExecutionOrder(-100)]
+    public class CampaignManager : UnityEngine.MonoBehaviour
     {
-        private static CampaignManager _instance = null!;
         private static CampaignManager? _instance;
+
         public static CampaignManager Instance
         {
             get
             {
                 if (_instance == null)
                 {
-                    _instance = UnityEngine.Object.FindObjectOfType<CampaignManager>();
+                    _instance = UnityEngine.Object.FindAnyObjectByType<CampaignManager>();
                     if (_instance == null)
                     {
-                        GameObject go = new GameObject("CampaignManager");
+                        UnityEngine.GameObject go = new UnityEngine.GameObject("CampaignManager");
                         _instance = go.AddComponent<CampaignManager>();
                     }
                 }
-                return _instance!;
+                return _instance;
             }
         }
 
-        public HorizonGameData currentCampaignData = null!;
         public HorizonGameData? currentCampaignData;
         public float currentVoidSaturationLevel;
 
+        // 🛡️ Sentinel: Cache deviceUniqueIdentifier to avoid expensive native boundary crossing
+        private static string? _cachedDeviceIdentifier;
+
         private void Awake()
         {
-            if (_instance != null && (UnityEngine.Object)_instance != (UnityEngine.Object)this)
+            if (_instance != null && _instance != this)
             {
-                UnityEngine.Object.Destroy(gameObject);
+                UnityEngine.Object.Destroy(this.gameObject);
                 return;
             }
             _instance = this;
-            UnityEngine.Object.DontDestroyOnLoad(gameObject);
+            UnityEngine.Object.DontDestroyOnLoad(this.gameObject);
             LoadCampaignData();
         }
 
@@ -48,139 +54,95 @@ namespace Milehigh.Core
             string filePath;
 
 #if UNITY_EDITOR
-            filePath = Path.Combine(Application.dataPath, "Scripts/Data", fileName);
+            filePath = System.IO.Path.Combine(UnityEngine.Application.dataPath, "Scripts/Data", fileName);
 #else
-            filePath = Path.Combine(Application.streamingAssetsPath, fileName);
+            filePath = System.IO.Path.Combine(UnityEngine.Application.streamingAssetsPath, fileName);
 #endif
 
-            if (File.Exists(filePath))
+            if (System.IO.File.Exists(filePath))
             {
                 try
                 {
-                    string json = File.ReadAllText(filePath);
-                    // NRT Pattern: Explicitly mark deserialized object as nullable
-                    HorizonGameData? data = JsonUtility.FromJson<HorizonGameData>(json);
+                    string json = System.IO.File.ReadAllText(filePath);
+                    HorizonGameData? data = UnityEngine.JsonUtility.FromJson<HorizonGameData>(json);
 
                     // 🛡️ Sentinel: Perform security and integrity validation after deserialization.
-                    if (currentCampaignData != null && currentCampaignData.IsValid())
-                    {
-                        if (currentCampaignData.metadata != null)
-                        {
-                            currentVoidSaturationLevel = currentCampaignData.metadata.voidSaturationLevel;
-                        }
-                        // SECURITY: Log only the filename to avoid exposing absolute filesystem paths.
-                    // 🛡️ Sentinel: Perform validation after deserialization to ensure data integrity.
-                    // NRT Pattern: Use local variable 'data' for consistent flow analysis.
                     if (data != null && data.IsValid())
                     {
                         currentCampaignData = data;
-                        currentVoidSaturationLevel = data.metadata.voidSaturationLevel;
-                        // SECURITY: Log only the file name, not the absolute path, to prevent information disclosure
-                    // 🛡️ Sentinel: Security validation of deserialized data.
-                    // SECURITY: Perform validation after deserialization to ensure data integrity
-                    if (currentCampaignData == null)
-                    {
-                        Debug.LogError($"Failed to parse campaign data from {fileName}.");
-                    if (currentCampaignData != null)
-                    {
-                        if (currentCampaignData.IsValid())
+                        if (data.metadata != null)
                         {
-                            currentVoidSaturationLevel = currentCampaignData.metadata.voidSaturationLevel;
-                            // SECURITY: Log only the file name, not the absolute path, to prevent information disclosure
-                            Debug.Log($"Campaign data loaded and validated from {fileName}");
+                            currentVoidSaturationLevel = data.metadata.voidSaturationLevel;
                         }
-                        else
-                        {
-                            Debug.LogError($"Campaign data from {fileName} failed security validation.");
-                            currentCampaignData = null;
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogError($"Failed to parse campaign data from {fileName}.");
-                    if (currentCampaignData != null && currentCampaignData.IsValid())
-                    {
-                        currentVoidSaturationLevel = currentCampaignData.metadata!.voidSaturationLevel;
-                        currentVoidSaturationLevel = currentCampaignData.metadata.voidSaturationLevel;
-                        Debug.Log($"Campaign data loaded and validated from {fileName}");
-                    }
-                    else if (!currentCampaignData.IsValid())
-                    {
-                        Debug.LogError($"Campaign data from {fileName} failed security validation.");
-                        currentCampaignData = null;
-                    }
-                    else
-                    {
-                        currentVoidSaturationLevel = currentCampaignData.metadata.voidSaturationLevel;
-                        // SECURITY: Log only the file name, not the absolute path, to prevent information disclosure
-                        Debug.Log($"Campaign data loaded and validated from {fileName}");
-                        Debug.LogError($"Failed to parse or validate campaign data from {fileName}.");
-                        // SECURITY: Log only the file name, not the absolute path, to prevent information disclosure
+                        // SECURITY: Log only the filename to avoid exposing absolute filesystem paths.
                         UnityEngine.Debug.Log($"Campaign data loaded and validated from {fileName}");
                     }
                     else
                     {
-                        Debug.LogError($"Campaign data from {fileName} failed security validation.");
-                        UnityEngine.Debug.LogError($"Failed to parse or validate campaign data from {fileName}.");
-                        Debug.Log($"Campaign data loaded and validated from {fileName}");
-                    }
-                    else
-                    {
-                        // SECURITY: Fail securely and don't use invalid data
-                        Debug.LogError($"[Security] Campaign data from {fileName} failed validation or is malformed.");
-                        currentCampaignData = null; // Prevent use of invalid data.
-                        Debug.LogError($"Campaign data from {fileName} failed security validation.");
-                        Debug.LogError($"Campaign data from {fileName} failed security validation or parsing.");
-                        // SECURITY: Fail securely and don't use invalid data. Mask runtime exception details and avoid leaking absolute paths in logs.
-                        Debug.LogError($"Failed to parse or security-validate campaign data from {fileName}.");
+                        // SECURITY: Fail securely by nullifying corrupted data and logging the error without leaking internal paths.
+                        UnityEngine.Debug.LogError($"[Security] Campaign data from {fileName} failed validation or is malformed.");
                         currentCampaignData = null;
-                        Debug.LogError($"Campaign data from {fileName} failed security validation or parsing.");
-                        Debug.LogError($"[Security] Campaign data from {fileName} failed validation.");
-                        Debug.LogError($"Failed to parse or validate campaign data from {fileName}.");
-                        currentCampaignData = null!; // Ensure we don't use invalid data
-                        Debug.LogError($"Campaign data from {fileName} failed security validation.");
-                        currentCampaignData = null;
-                        // SECURITY: Fail securely and don't use invalid data
-                        // SECURITY: Mask runtime exception details and avoid leaking absolute paths in logs
-                        Debug.LogError($"Failed to parse or security-validate campaign data from {fileName}.");
-                        // 🛡️ Sentinel: Failed validation means we cannot trust the campaign data.
-                        // SECURITY: Log the validation failure without exposing internal paths
-                        Debug.LogError($"Campaign data from {fileName} failed security validation or is malformed.");
-                        currentCampaignData = null; // Ensure we don't use invalid data
                     }
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogError($"Error loading campaign data from {fileName}: {ex.Message}");
-                    currentCampaignData = null; // Ensure we don't use partially loaded or invalid data
-                    // SECURITY: Fail securely by catching exceptions and masking sensitive details (e.g., stack traces).
-                    Debug.LogError($"[Security] Critical error during campaign data load from {fileName}: {ex.Message}");
-                    Debug.LogError($"Failed to load or parse campaign data from {fileName}. Error: {ex.Message}");
-                    // SECURITY: Catch exceptions during file read/JSON parse to fail securely and avoid leaking internal stack traces.
                     // SECURITY: Mask runtime exception details and avoid leaking absolute paths in logs
-                    // SECURITY: Mask runtime exception stack traces and avoid leaking absolute paths in logs
-                    // SECURITY: Catch exceptions to fail securely and avoid leaking internal stack traces or paths.
-                    Debug.LogError($"Failed to load or parse campaign data from {fileName}. Error: {ex.Message}");
-                    Debug.LogError($"Error loading campaign data from {fileName}: {ex.Message}");
-                    // SECURITY: Catch exceptions during file read/JSON parse to fail securely and avoid leaking internal stack traces.
-                    // SECURITY: Mask runtime exception details and avoid leaking absolute paths in logs
-                    Debug.LogError($"Error loading campaign data from {fileName}");
+                    // Log only the file name and exception type to prevent information disclosure of internal paths.
+                    UnityEngine.Debug.LogError($"[Security] Error loading campaign data from {fileName}: ({ex.GetType().Name})");
                     currentCampaignData = null;
                 }
             }
             else
             {
-                // SECURITY: Log only the file name, not the absolute path, to prevent information disclosure
+                // SECURITY: Log only the file name, not the absolute path, to prevent information disclosure.
                 UnityEngine.Debug.LogError($"Campaign master JSON not found: {fileName}");
-                // SECURITY: Log only the filename to prevent information disclosure.
-                Debug.LogError($"Campaign master JSON not found: {fileName}");
             }
         }
 
         public void IncreaseVoidSaturation(float amount)
         {
-            currentVoidSaturationLevel = Mathf.Clamp01(currentVoidSaturationLevel + amount);
+            currentVoidSaturationLevel = UnityEngine.Mathf.Clamp01(currentVoidSaturationLevel + amount);
             UnityEngine.Debug.Log($"Void Saturation Level: {currentVoidSaturationLevel}");
+            this.SaveSecureData("VoidSaturation", this.currentVoidSaturationLevel.ToString());
+        }
+
+        public void SaveSecureData(string key, string data)
+        {
+            if (System.String.IsNullOrEmpty(key) || System.String.IsNullOrEmpty(data)) return;
+
+            string obfuscated = this.ProcessXOR(data);
+            UnityEngine.PlayerPrefs.SetString($"SECURE_{key}", obfuscated);
+            UnityEngine.PlayerPrefs.Save();
+        }
+
+        public string LoadSecureData(string key)
+        {
+            string obfuscated = UnityEngine.PlayerPrefs.GetString($"SECURE_{key}", "");
+            if (System.String.IsNullOrEmpty(obfuscated)) return "";
+
+            return this.ProcessXOR(obfuscated);
+        }
+
+        private string ProcessXOR(string textToProcess)
+        {
+            if (string.IsNullOrEmpty(_cachedDeviceIdentifier))
+            {
+                _cachedDeviceIdentifier = UnityEngine.SystemInfo.deviceUniqueIdentifier;
+                if (string.IsNullOrEmpty(_cachedDeviceIdentifier) || _cachedDeviceIdentifier == "n/a")
+                {
+                    _cachedDeviceIdentifier = "MILEHIGH_FALLBACK_STABLE_SALT_2025";
+                }
+            }
+
+            string salt = _cachedDeviceIdentifier;
+            char[] output = new char[textToProcess.Length];
+
+            for (int i = 0; i < textToProcess.Length; i++)
+            {
+                output[i] = (char)(textToProcess[i] ^ salt[i % salt.Length]);
+            }
+
+            return new string(output);
         }
     }
 }

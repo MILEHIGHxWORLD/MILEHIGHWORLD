@@ -1,7 +1,10 @@
-using UnityEngine;
-using Milehigh.Data;
+// Copyright 2026 MILEHIGH-WORLD LLC. All Rights Reserved.
+// PROPRIETARY AND CONFIDENTIAL: DO NOT DISTRIBUTE.
 
-namespace Milehigh.Characters
+using UnityEngine;
+using MilehighWorld.Data;
+
+namespace MilehighWorld.Characters
 {
     public class DelilahAIController : CharacterControllerBase
     {
@@ -23,9 +26,8 @@ namespace Milehigh.Characters
             UnityEngine.Debug.Log("Delilah: Spawning shadow clones...");
             if (shadowClonePrefab != null)
             {
+                // ⚡ Bolt: Removed redundant Instantiate call to halve instantiation overhead and reduce memory pressure.
                 UnityEngine.Object.Instantiate(shadowClonePrefab, transform.position + UnityEngine.Random.insideUnitSphere * 5f, UnityEngine.Quaternion.identity);
-                // SECURITY: Ensure we use the UnityEngine.Random to avoid ambiguity and ensure correct behavior.
-                Instantiate(shadowClonePrefab, transform.position + UnityEngine.Random.insideUnitSphere * 5f, Quaternion.identity);
             }
         }
 

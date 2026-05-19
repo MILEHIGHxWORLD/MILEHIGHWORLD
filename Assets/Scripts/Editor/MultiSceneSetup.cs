@@ -1,7 +1,10 @@
+// Copyright 2026 MILEHIGH-WORLD LLC. All Rights Reserved.
+// PROPRIETARY AND CONFIDENTIAL: DO NOT DISTRIBUTE.
+
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
-namespace Milehigh.Editor
+namespace MilehighWorld.Editor
 {
     public class MultiSceneSetup
     {
