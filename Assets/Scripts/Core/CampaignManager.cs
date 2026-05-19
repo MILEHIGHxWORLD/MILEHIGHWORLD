@@ -1,9 +1,12 @@
+// Copyright 2026 MILEHIGH-WORLD LLC. All Rights Reserved.
+// PROPRIETARY AND CONFIDENTIAL: DO NOT DISTRIBUTE.
+
 using System;
 using UnityEngine;
 using System.IO;
-using Milehigh.Data;
+using MilehighWorld.Data;
 
-namespace Milehigh.Core
+namespace MilehighWorld.Core
 {
     [UnityEngine.DefaultExecutionOrder(-100)]
     public class CampaignManager : UnityEngine.MonoBehaviour
